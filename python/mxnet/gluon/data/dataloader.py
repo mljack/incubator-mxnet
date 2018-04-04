@@ -220,11 +220,10 @@ class DataLoader(object):
 
         for idx, batch in enumerate(self._batch_sampler):
             key_queue.put((idx, batch))
-        num_batches = idx + 1
 
         data_buffer = {}
         curr_idx = 0
-        for _ in range(num_batches):
+        for _ in range(len(self._batch_sampler)):
             idx, batch = data_queue.get()
             data_buffer[idx] = batch
             while curr_idx in data_buffer:

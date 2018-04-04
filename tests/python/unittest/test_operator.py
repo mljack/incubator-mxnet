@@ -321,8 +321,8 @@ def check_softmax_with_shape(shape, xpu, preserve_shape=False):
     X = mx.symbol.Variable('X')
     L = mx.symbol.Variable('L')
     Y = mx.symbol.SoftmaxOutput(data=X, label=L, preserve_shape=preserve_shape)
-    x = mx.random.uniform(-1, 1, shape, ctx=xpu)
-    l = mx.random.uniform(-1, 1, shape, ctx=xpu)
+    x = mx.random.uniform(-1, 1, shape, ctx=mx.cpu()).copyto(xpu)
+    l = mx.random.uniform(-1, 1, shape, ctx=mx.cpu()).copyto(xpu)
     l[:] = np_softmax(l.asnumpy())
     grad = mx.nd.empty(shape, ctx = xpu)
     exec1 = Y.bind(xpu, args = [x, l], args_grad = {'X': grad})
@@ -4315,32 +4315,21 @@ def test_scatter_gather_nd():
         npdata = np.zeros_like(data.asnumpy())
         npdata[npidx] = y.asnumpy()
         assert (npdata == data.grad.asnumpy()).all()
-        assert (mx.nd._internal._backward_gather_nd(y, idx, shape=data.shape).asnumpy() == data.grad.asnumpy()).all()
-    for dtype in ['int32', 'int64', 'float16', 'float32', 'float64']:
-        data = mx.nd.arange(360, dtype=dtype).reshape((3,4,5,6))
-        idx = mx.nd.array([[1,1,2], [3, 3, 0], [3,2,1]], dtype='int32')
-        check(data, idx)
+        assert (mx.nd.scatter_nd(y, idx, shape=data.shape).asnumpy() == data.grad.asnumpy()).all()
 
-        idx = mx.nd.array([[1,1,2], [3,3,0], [3,2,1], [5,2,4]], dtype='int32')
+    data = mx.nd.arange(360, dtype='int32').reshape((3,4,5,6))
+    idx = mx.nd.array([[1,1,2], [3, 3, 0], [3,2,1]], dtype='int32')
 
-        check(data, idx)
+    check(data, idx)
 
-        data = mx.nd.array([2, 3, 0], dtype=dtype)
-        idx = mx.nd.array([[1, 1, 0], [0, 1, 0]], dtype='int32')
-        assert (mx.nd.scatter_nd(data, idx, shape=(2, 2)).asnumpy() == [[0, 0], [2, 3]]).all()
+    idx = mx.nd.array([[1,1,2], [3,3,0], [3,2,1], [5,2,4]], dtype='int32')
 
-        data = mx.nd.array([2, 3, 0], dtype=dtype)
-        idx = mx.nd.array([[1, 1, 0], [1, 1, 0]], dtype='int32')
-        assert (mx.nd._internal._backward_gather_nd(data, idx, shape=(2, 2)).asnumpy() == [[0, 0], [0, 5]]).all()
-        data_npy = np.random.randint(0, 10, (100,))
-        data = mx.nd.array(data_npy, dtype=dtype)
-        idx = mx.nd.zeros(shape=(1, 100), dtype='int32')
-        assert (mx.nd._internal._backward_gather_nd(data, idx, shape=(1,)).asscalar() == data_npy.sum())
-        if dtype == 'int64':
-            data = mx.nd.array([2123162361283621, -31231236374787,
-                                -112372937128970, -1378278798172378], dtype=dtype)
-            idx = mx.nd.array([[0, 0, 0, 0]], dtype='int32')
-            assert (mx.nd._internal._backward_gather_nd(data, idx, shape=(1,)).asscalar() == data.asnumpy().sum())
+    check(data, idx)
+
+    data = mx.nd.array([2, 3, 0])
+    idx = mx.nd.array([[1, 1, 0], [0, 1, 0]])
+
+    assert (mx.nd.scatter_nd(data, idx, shape=(2, 2)).asnumpy() == [[0, 0], [2, 3]]).all()
 
 def compare_forw_backw_unary_op(
         name, forward_mxnet_call, forward_numpy_call,
@@ -4677,14 +4666,6 @@ def test_slice():
     data = mx.sym.Variable('data')
     slice_sym = mx.sym.slice(data, begin=[0, None], end=[1, None], step=[2, -1])
     check_numeric_gradient(slice_sym, [in_data])
-
-
-def test_float16_min_max():
-    """Test for issue: https://github.com/apache/incubator-mxnet/issues/9007"""
-    a = mx.nd.array([np.finfo('float16').min, np.finfo('float16').max], dtype='float16')
-    assert a.dtype == np.float16
-    assert np.finfo('float16').min == mx.nd.min(a).asscalar()
-    assert np.finfo('float16').max == mx.nd.max(a).asscalar()
 
 
 if __name__ == '__main__':
