@@ -41,6 +41,8 @@ def test_rcnn(network, dataset, image_set, root_path, dataset_path,
     # load symbol and testing data
     if has_rpn:
         sym = eval('get_' + network + '_test')(num_classes=config.NUM_CLASSES, num_anchors=config.NUM_ANCHORS)
+        print dataset, image_set, root_path, dataset_path
+        print(eval("PascalVOC"))
         imdb = eval(dataset)(image_set, root_path, dataset_path)
         roidb = imdb.gt_roidb()
     else:
@@ -62,6 +64,7 @@ def test_rcnn(network, dataset, image_set, root_path, dataset_path,
     aux_shape_dict = dict(zip(sym.list_auxiliary_states(), aux_shape))
 
     # check parameters
+    print(sym.list_arguments())
     for k in sym.list_arguments():
         if k in data_shape_dict or 'label' in k:
             continue

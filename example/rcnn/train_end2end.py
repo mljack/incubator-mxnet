@@ -138,7 +138,24 @@ def train_net(args, ctx, pretrained, epoch, prefix, begin_epoch, end_epoch,
     lr = base_lr * (lr_factor ** (len(lr_epoch) - len(lr_epoch_diff)))
     lr_iters = [int(epoch * len(roidb) / batch_size) for epoch in lr_epoch_diff]
     logger.info('lr %f lr_epoch_diff %s lr_iters %s' % (lr, lr_epoch_diff, lr_iters))
-    lr_scheduler = mx.lr_scheduler.MultiFactorScheduler(lr_iters, lr_factor)
+
+    # learning rate schedule with iteration count, not epoch count
+    #lr_scheduler = mx.lr_scheduler.MultiFactorScheduler(lr_iters, lr_factor)
+    lr_scheduler_test = mx.lr_scheduler.MultiFactorScheduler(lr_epoch, lr_factor, lr)
+    for i in range(1, end_epoch*200000*2, 10000):
+        print(i, lr_scheduler_test(i))
+
+    lr_scheduler = mx.lr_scheduler.MultiFactorScheduler(lr_epoch, lr_factor, lr)
+
+    print("lr: ", lr)
+    print("lr: ", lr_iters)
+    print("lr_factor: ", lr_factor)
+    print("lr_epoch: ", lr_epoch)
+    print("lr_epoch_diff: ", lr_epoch_diff)
+    print("batch_size: ", batch_size)
+    print("len(roidb): ", len(roidb))
+    #exit(0)
+
     # optimizer
     optimizer_params = {'momentum': 0.9,
                         'wd': 0.0005,

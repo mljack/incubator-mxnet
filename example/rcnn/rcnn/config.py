@@ -31,6 +31,7 @@ config.FIXED_PARAMS_SHARED = ['conv1', 'conv2', 'conv3', 'conv4', 'conv5']
 # dataset related params
 config.NUM_CLASSES = 21
 config.SCALES = [(600, 1000)]  # first is scale (the shorter side); second is max size
+#config.SCALES = [(1052, 1914)]  # first is scale (the shorter side); second is max size
 config.ANCHOR_SCALES = (8, 16, 32)
 config.ANCHOR_RATIOS = (0.5, 1, 2)
 config.NUM_ANCHORS = len(config.ANCHOR_SCALES) * len(config.ANCHOR_RATIOS)
@@ -157,6 +158,8 @@ network.resnet.FIXED_PARAMS_SHARED = ['conv0', 'stage1', 'stage2', 'stage3', 'ga
 dataset = edict()
 
 dataset.PascalVOC = edict()
+
+dataset.KITTI = edict()
 
 dataset.coco = edict()
 dataset.coco.dataset = 'coco'
